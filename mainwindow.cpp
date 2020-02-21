@@ -83,6 +83,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    prevPosX = -1;
+    prevPosY = -1;
+    ui->comboBoxShowMode->addItem("Image");
+    ui->comboBoxShowMode->addItem("Image + Region");
+    ui->comboBoxShowMode->addItem("Image + Contour");
+    ui->comboBoxShowMode->addItem("Image + Transparent Region");
+    ui->comboBoxShowMode->addItem("Image + Transparent Contour");
+    ui->comboBoxShowMode->setCurrentIndex(1);
 
     ScaleTile();
 }
@@ -96,6 +104,26 @@ MainWindow::~MainWindow()
 //          CLASS FUNCTIONS
 //------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::OpenImagesFolder()
+{
+    ui->listWidgetImageFiles->clear();
+
+    path FolderPath(ui->lineEditImageFolder->text().toStdWString());
+
+    for (directory_entry& FileToProcess : directory_iterator(FolderPath))
+    {
+        wregex FilePattern(ui->lineEditRegexImageFile->text().toStdWString());
+        if (!regex_match(FileToProcess.path().filename().wstring(), FilePattern ))
+            continue;
+        path PathLocal = FileToProcess.path();
+        if (!exists(PathLocal))
+        {
+            ui->textEditOut->append(QString::fromStdWString(PathLocal.filename().wstring()) + " File not exists" );
+            break;
+        }
+        ui->listWidgetImageFiles->addItem(QString::fromStdWString(PathLocal.filename().wstring()));
+    }
+}
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::ShowImages()
 {
@@ -103,6 +131,22 @@ void MainWindow::ShowImages()
         ShowsScaledImage(ImIn, "Input Image");
     if(ui->checkBoxShowMask->checkState())
         ShowsScaledImage(ShowRegion(Mask), "Mask");
+    if(ui->checkBoxShowMaskOnImage->checkState())
+        ShowsScaledImage(ShowSolidRegionOnImage(Mask, ImIn), "Mask on image");
+
+    if(ui->checkBoxShowTileOnImage->checkState())
+    {
+        int tileStep = ui->spinBoxTileStep->value();
+        int tileSize = ui->spinBoxTileSize->value();
+
+        int tilePositionX = ui->spinTilePositionX->value() * tileStep;
+        int tilePositionY = ui->spinTilePositionY->value() * tileStep;
+
+        Mat ImToShow;
+        ImIn.copyTo(ImToShow);
+        rectangle(ImToShow, Rect(tilePositionX,tilePositionY, tileSize, tileSize), Scalar(0.0, 255.0, 0.0, 0.0), 4);
+        ShowsScaledImage(ImToShow, "Tile On Image");
+    }
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::ShowsScaledImage(Mat Im, string ImWindowName)
@@ -134,25 +178,56 @@ void MainWindow::GetTile()
     int tilePositionY = ui->spinTilePositionY->value() * tileStep;
 
 
-    if(ui->checkBoxShowTileOnImage->checkState())
-    {
 
-        Mat ImToShow;
-        ImIn.copyTo(ImToShow);
-        rectangle(ImToShow, Rect(tilePositionX,tilePositionY, tileSize, tileSize), Scalar(0.0, 255.0, 0.0, 0.0), 4);
-        ShowsScaledImage(ImToShow, "Tile On Image");
-    }
     ImIn(Rect(tilePositionX, tilePositionY, tileSize, tileSize)).copyTo(TileIm);
     Mask(Rect(tilePositionX, tilePositionY, tileSize, tileSize)).copyTo(TileMask);
 
     ShowTile();
+    ShowImages();
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::CopyTileToRegion()
+{
+    int tileStep = ui->spinBoxTileStep->value();
+    int tileSize = ui->spinBoxTileSize->value();
+
+    int tilePositionX = ui->spinTilePositionX->value() * tileStep;
+    int tilePositionY = ui->spinTilePositionY->value() * tileStep;
+
+    TileMask.copyTo(Mask(Rect(tilePositionX, tilePositionY, tileSize, tileSize)));
+
+
+
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::ShowTile()
 {
     Mat ImShow;
+    if(TileMask.empty() || TileIm.empty())
+        return;
     //TileIm.copyTo(ImShow);
-    ImShow = ShowSolidRegionOnImage(TileMask,TileIm);
+
+    switch(ui->comboBoxShowMode->currentIndex())
+    {
+    case 1:
+        ImShow = ShowSolidRegionOnImage(TileMask, TileIm);
+        break;
+    case 2:
+        ImShow = ShowSolidRegionOnImage(GetContour5(TileMask), TileIm);
+        break;
+    case 3:
+        ImShow = ShowTransparentRegionOnImage(TileMask, TileIm, ui->spinBoxTransparency->value());
+        break;
+    case 4:
+        ImShow = ShowTransparentRegionOnImage(GetContour5(TileMask), TileIm, ui->spinBoxTransparency->value());
+        break;
+    default:
+         TileIm.copyTo(ImShow);
+        break;
+    }
+
+
+
     ui->widgetImage->paintBitmap(ImShow);
     ui->widgetImage->repaint();
 }
@@ -160,11 +235,77 @@ void MainWindow::ShowTile()
 void MainWindow::ScaleTile()
 {
     int scaledSize = ui->spinBoxTileSize->value() * ui->spinBoxTileScale->value();
-    int positionX = 520;
-    int positionY = 90;
+    int positionX = 530;
+    int positionY = 50;
     ui->widgetImage->setGeometry(positionX,positionY,scaledSize,scaledSize);
 }
 //------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::LoadMask()
+{
+    QString ImageFolderQStr = ui->lineEditImageFolder->text();
+    path maskFilePath = ImageFolderQStr.toStdWString();
+    maskFilePath.append(imageFilePath.stem().string() + ".png");
+
+    if(!exists(imageFilePath))
+    {
+        ui->textEditOut->append("image file " + QString::fromStdWString(imageFilePath.wstring()) + " not exists");
+        return;
+    }
+
+
+    if(exists(maskFilePath))
+    {
+        Mask = imread(maskFilePath.string(), CV_LOAD_IMAGE_ANYDEPTH);
+        if(Mask.type() != CV_16U)
+        {
+            ui->textEditOut->append("mask format improper");
+            Mask.convertTo(Mask, CV_16U);
+        }
+
+        if(Mask.empty())
+        {
+            Mask = Mat::zeros(ImIn.rows, ImIn.cols, CV_16U);
+            ui->textEditOut->append("mask file " + QString::fromStdWString(maskFilePath.wstring()) + "cannot be read");
+            ui->textEditOut->append("empty mask was created");
+        }
+    }
+    else
+    {
+        Mask = Mat::zeros(ImIn.rows, ImIn.cols, CV_16U);
+        ui->textEditOut->append("mask file " + QString::fromStdWString(maskFilePath.wstring()) + " not exists");
+        ui->textEditOut->append("empty mask was created");
+    }
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::SaveMask()
+{
+    QString ImageFolderQStr = ui->lineEditImageFolder->text();
+    path maskFilePath = ImageFolderQStr.toStdWString();
+    maskFilePath.append(imageFilePath.stem().string() + ".png");
+
+    if(!exists(imageFilePath))
+    {
+        ui->textEditOut->append("image file " + QString::fromStdWString(imageFilePath.wstring()) + " not exists");
+        return;
+    }
+
+    if(Mask.empty())
+    {
+        ui->textEditOut->append("mask empty. nothing to save");
+        return;
+    }
+
+    if(!exists(maskFilePath))
+    {
+        ui->textEditOut->append("new mask saved");
+    }
+    else
+    {
+        ui->textEditOut->append("mask updated");
+    }
+
+    imwrite(maskFilePath.string(),Mask);
+}
 //------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------
 //          Slots
@@ -201,29 +342,22 @@ void MainWindow::on_pushButtonOpenImageFolder_clicked()
 
     ui->lineEditImageFolder->setText(FolderQString);
 
-    ui->listWidgetImageFiles->clear();
-
-    for (directory_entry& FileToProcess : directory_iterator(FolderPath))
-    {
-        regex FilePattern(ui->lineEditRegexImageFile->text().toStdString());
-        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
-            continue;
-        path PathLocal = FileToProcess.path();
-        if (!exists(PathLocal))
-        {
-            ui->textEditOut->append(QString::fromStdString(PathLocal.filename().string() + " File not exists" ));
-            break;
-        }
-        ui->listWidgetImageFiles->addItem(PathLocal.filename().string().c_str());
-    }
+    OpenImagesFolder();
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::on_listWidgetImageFiles_currentTextChanged(const QString &currentText)
 {
     QString ImageFolderQStr = ui->lineEditImageFolder->text();
-    path fileToOpenPath = ImageFolderQStr.toStdWString();
-    fileToOpenPath.append(currentText.toStdWString());
-    string fileToOpenStr = fileToOpenPath.string();
+    imageFilePath = ImageFolderQStr.toStdWString();
+    imageFilePath.append(currentText.toStdWString());
+
+    if(!exists(imageFilePath))
+    {
+        ui->textEditOut->append("file " + QString::fromStdWString(imageFilePath.wstring()) + "not exists");
+        return;
+    }
+
+    string fileToOpenStr = imageFilePath.string();
 
     if(ui->checkBoxAutocleanOut->checkState())
         ui->textEditOut->clear();
@@ -241,15 +375,9 @@ void MainWindow::on_listWidgetImageFiles_currentTextChanged(const QString &curre
         return;
     }
 
-    //-------------------------------------
-    //          Mask
-    //-------------------------------------
-    Mask = Mat::zeros(ImIn.rows, ImIn.cols, CV_16U);
+    LoadMask();
 
-    //-------------------------------------
-    //-------------------------------------
-
-    string extension = fileToOpenPath.extension().string();
+    string extension = imageFilePath.extension().string();
 
     if((extension == ".tif" || extension == ".tiff") && ui->checkBoxShowTiffInfo->checkState())
         ui->textEditOut->append(QString::fromStdString(TiffFilePropetiesAsText(fileToOpenStr)));
@@ -276,7 +404,10 @@ void MainWindow::on_checkBoxShowInput_toggled(bool checked)
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::on_spinBoxScalePower_valueChanged(int arg1)
 {
-    ShowImages();
+    if(arg1 == 1)
+        ui->spinBoxScaleBase->setValue(1);
+    else
+        ShowImages();
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::on_spinBoxScaleBase_valueChanged(int arg1)
@@ -314,11 +445,31 @@ void MainWindow::on_widgetImage_on_mouseMove(QPoint point, int butPressed)
     int tileScale = ui->spinBoxTileScale->value();
     int x = point.x() / tileScale;
     int y = point.y() / tileScale;
-    if(butPressed == 1)
+    if(butPressed & 0x1)
     {
-        circle(TileMask, Point(x,y),radius,3,-1);
+        if(ui->checkBoxConnected->checkState())
+        {
+            if(prevPosX < 0 || prevPosX < 0)
+            {
+                prevPosX = x;
+                prevPosY = y;
+            }
+            else
+            {
+                line(TileMask, Point(prevPosX,prevPosY), Point(x,y), 3, radius + 1);
+                prevPosX = x;
+                prevPosY = y;
+            }
+        }
+        else
+            circle(TileMask, Point(x,y),radius,3,-1);
 
         //PlaceShapeOnMask(TileMask, x, y, 0, 2);
+    }
+    else
+    {
+        prevPosX = -1;
+        prevPosY = -1;
     }
     if(butPressed & 0x2)
     {
@@ -326,4 +477,71 @@ void MainWindow::on_widgetImage_on_mouseMove(QPoint point, int butPressed)
         //PlaceShapeOnMask(TileMask, x, y, 0, 0);
     }
     ShowTile();
+}
+
+void MainWindow::on_comboBoxShowMode_currentIndexChanged(int index)
+{
+    ShowTile();
+}
+
+void MainWindow::on_spinBoxTransparency_valueChanged(int arg1)
+{
+    ShowTile();
+}
+
+void MainWindow::on_pushButtonFillHoles_clicked()
+{
+    FillBorderWithValue(TileMask, 0xFFFF);
+    OneRegionFill5Fast1(TileMask, 0xFFFF);
+    FillHoles(TileMask, 3);
+    DeleteRegionFromImage(TileMask, 0xFFFF);
+    ShowTile();
+}
+
+void MainWindow::on_pushButtonClearRegion_clicked()
+{
+    DeleteRegionFromImage(TileMask, 3);
+    ShowTile();
+}
+
+void MainWindow::on_pushButtonReloadTile_clicked()
+{
+    GetTile();
+}
+
+void MainWindow::on_pushButtonCopyToMask_clicked()
+{
+    CopyTileToRegion();
+    ShowImages();
+}
+
+void MainWindow::on_checkBoxShowMask_toggled(bool checked)
+{
+    ShowImages();
+}
+
+void MainWindow::on_pushButtonSaveMask_clicked()
+{
+    SaveMask();
+}
+
+void MainWindow::on_pushButtonReloadMask_clicked()
+{
+    LoadMask();
+    ShowImages();
+}
+
+void MainWindow::on_lineEditRegexImageFile_returnPressed()
+{
+    OpenImagesFolder();
+}
+
+void MainWindow::on_lineEditImageFolder_returnPressed()
+{
+    OpenImagesFolder();
+}
+
+void MainWindow::on_checkBoxShowMaskOnImage_toggled(bool checked)
+{
+    ShowImages();
 }

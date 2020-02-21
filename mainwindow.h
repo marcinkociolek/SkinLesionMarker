@@ -20,16 +20,24 @@ public:
     cv::Mat TileIm;
     cv::Mat TileMask;
 
+    int prevPosX;
+    int prevPosY;
+
+    boost::filesystem::path imageFilePath;
 
 
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    void MainWindow::OpenImagesFolder();
     void ShowImages();
     void ShowsScaledImage(cv::Mat Im, std::string ImWindowName);
     void GetTile();
+    void CopyTileToRegion();
     void ShowTile();
     void ScaleTile();
+    void LoadMask();
+    void SaveMask();
 
 
 private slots:
@@ -54,6 +62,30 @@ private slots:
 
 
     void on_widgetImage_on_mouseMove(QPoint point, int butPressed );
+
+    void on_comboBoxShowMode_currentIndexChanged(int index);
+
+    void on_spinBoxTransparency_valueChanged(int arg1);
+
+    void on_pushButtonFillHoles_clicked();
+
+    void on_pushButtonClearRegion_clicked();
+
+    void on_pushButtonReloadTile_clicked();
+
+    void on_pushButtonCopyToMask_clicked();
+
+    void on_checkBoxShowMask_toggled(bool checked);
+
+    void on_pushButtonSaveMask_clicked();
+
+    void on_pushButtonReloadMask_clicked();
+
+    void on_lineEditRegexImageFile_returnPressed();
+
+    void on_lineEditImageFolder_returnPressed();
+
+    void on_checkBoxShowMaskOnImage_toggled(bool checked);
 
 private:
     Ui::MainWindow *ui;
