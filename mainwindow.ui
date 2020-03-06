@@ -107,7 +107,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>.+.tiff</string>
+      <string>.+.tif</string>
      </property>
     </widget>
     <widget class="QListWidget" name="listWidgetImageFiles">
@@ -410,12 +410,12 @@
       <rect>
        <x>260</x>
        <y>10</y>
-       <width>31</width>
+       <width>81</width>
        <height>25</height>
       </rect>
      </property>
      <property name="text">
-      <string>Tile X</string>
+      <string>Pozycja X</string>
      </property>
     </widget>
     <widget class="QLabel" name="labelTilePositionY">
@@ -428,7 +428,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>Tile Y</string>
+      <string>Pozycja Y</string>
      </property>
     </widget>
     <widget class="QSpinBox" name="spinBoxTileStep">
@@ -514,7 +514,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>Tile scale</string>
+      <string>Skala</string>
      </property>
     </widget>
     <widget class="QComboBox" name="comboBoxShowMode">
@@ -652,12 +652,12 @@
       <rect>
        <x>10</x>
        <y>80</y>
-       <width>80</width>
+       <width>111</width>
        <height>22</height>
       </rect>
      </property>
      <property name="text">
-      <string>Fill Holes</string>
+      <string>Wypełnij dziury</string>
      </property>
     </widget>
     <widget class="QPushButton" name="pushButtonClearRegion">
@@ -696,7 +696,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>Copy To Mask</string>
+      <string>Kopiuj do Maski</string>
      </property>
     </widget>
     <widget class="QPushButton" name="pushButtonSaveMask">
