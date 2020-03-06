@@ -23,6 +23,9 @@ public:
     int prevPosX;
     int prevPosY;
 
+    int prevTilePositionX;
+    int prevTilePositionY;
+
     boost::filesystem::path imageFilePath;
 
 
@@ -33,7 +36,7 @@ public:
     void ShowImages();
     void ShowsScaledImage(cv::Mat Im, std::string ImWindowName);
     void GetTile();
-    void CopyTileToRegion();
+    int CopyTileToRegion();
     void ShowTile();
     void ScaleTile();
     void LoadMask();

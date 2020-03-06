@@ -92,6 +92,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->comboBoxShowMode->addItem("Image + Transparent Contour");
     ui->comboBoxShowMode->setCurrentIndex(1);
 
+    ui->comboBoxDrawingTool->addItem("Brak");
+    ui->comboBoxDrawingTool->addItem("Punkt");
+    ui->comboBoxDrawingTool->addItem("Linia");
+    //ui->comboBoxDrawingTool->addItem("Gumka");
+    ui->comboBoxDrawingTool->setCurrentIndex(1);
+
+
+    prevTilePositionX = -1;
+    prevTilePositionY = -1;
+
     ScaleTile();
 }
 
@@ -130,7 +140,7 @@ void MainWindow::ShowImages()
     if(ui->checkBoxShowInput->checkState())
         ShowsScaledImage(ImIn, "Input Image");
     if(ui->checkBoxShowMask->checkState())
-        ShowsScaledImage(ShowRegion(Mask), "Mask");
+        ShowsScaledImage(ShowRegion(changeRegionNumber(Mask,3,6)), "Mask");
     if(ui->checkBoxShowMaskOnImage->checkState())
         ShowsScaledImage(ShowSolidRegionOnImage(Mask, ImIn), "Mask on image");
 
@@ -171,13 +181,18 @@ void MainWindow::ShowsScaledImage(Mat Im, string ImWindowName)
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::GetTile()
 {
+    if(Mask.empty())
+        return;
+    if(ImIn.empty())
+        return;
     int tileStep = ui->spinBoxTileStep->value();
     int tileSize = ui->spinBoxTileSize->value();
 
     int tilePositionX = ui->spinTilePositionX->value() * tileStep;
     int tilePositionY = ui->spinTilePositionY->value() * tileStep;
 
-
+    prevTilePositionX = tilePositionX;
+    prevTilePositionY = tilePositionY;
 
     ImIn(Rect(tilePositionX, tilePositionY, tileSize, tileSize)).copyTo(TileIm);
     Mask(Rect(tilePositionX, tilePositionY, tileSize, tileSize)).copyTo(TileMask);
@@ -186,18 +201,21 @@ void MainWindow::GetTile()
     ShowImages();
 }
 //------------------------------------------------------------------------------------------------------------------------------
-void MainWindow::CopyTileToRegion()
+int MainWindow::CopyTileToRegion()
 {
+    if(prevTilePositionX < 0 || prevTilePositionY < 0)
+        return 0;
+
+    if(TileMask.empty())
+        return -1;
     int tileStep = ui->spinBoxTileStep->value();
     int tileSize = ui->spinBoxTileSize->value();
 
-    int tilePositionX = ui->spinTilePositionX->value() * tileStep;
-    int tilePositionY = ui->spinTilePositionY->value() * tileStep;
+    //int tilePositionX = ui->spinTilePositionX->value() * tileStep;
+    //int tilePositionY = ui->spinTilePositionY->value() * tileStep;
 
-    TileMask.copyTo(Mask(Rect(tilePositionX, tilePositionY, tileSize, tileSize)));
-
-
-
+    TileMask.copyTo(Mask(Rect(prevTilePositionX, prevTilePositionY, tileSize, tileSize)));
+    return 1;
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::ShowTile()
@@ -417,11 +435,14 @@ void MainWindow::on_spinBoxScaleBase_valueChanged(int arg1)
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::on_spinTilePositionX_valueChanged(int arg1)
 {
+    CopyTileToRegion();
     GetTile();
+
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::on_spinTilePositionY_valueChanged(int arg1)
 {
+    CopyTileToRegion();
     GetTile();
 }
 //------------------------------------------------------------------------------------------------------------------------------
@@ -430,6 +451,7 @@ void MainWindow::on_spinTilePositionY_valueChanged(int arg1)
 
 void MainWindow::on_spinBoxTileScale_valueChanged(int arg1)
 {
+
     ScaleTile();
 }
 
@@ -447,8 +469,30 @@ void MainWindow::on_widgetImage_on_mouseMove(QPoint point, int butPressed)
     int y = point.y() / tileScale;
     if(butPressed & 0x1)
     {
+        switch(ui->comboBoxDrawingTool->currentIndex())
+        {
+        case 1:
+            circle(TileMask, Point(x,y),radius,3,-1);
+            break;
+        case 2:
+            circle(TileMask, Point(x,y),radius,3,-1);
+            if(prevPosX < 0 || prevPosX < 0)
+            {
+                prevPosX = x;
+                prevPosY = y;
+            }
+            else
+            {
+                line(TileMask, Point(prevPosX,prevPosY), Point(x,y), 3, radius + 1);
+                prevPosX = x;
+                prevPosY = y;
+            }
+            break;
+        }
+        /*
         if(ui->checkBoxConnected->checkState())
         {
+            circle(TileMask, Point(x,y),radius,3,-1);
             if(prevPosX < 0 || prevPosX < 0)
             {
                 prevPosX = x;
@@ -463,7 +507,7 @@ void MainWindow::on_widgetImage_on_mouseMove(QPoint point, int butPressed)
         }
         else
             circle(TileMask, Point(x,y),radius,3,-1);
-
+        */
         //PlaceShapeOnMask(TileMask, x, y, 0, 2);
     }
     else
@@ -522,6 +566,7 @@ void MainWindow::on_checkBoxShowMask_toggled(bool checked)
 
 void MainWindow::on_pushButtonSaveMask_clicked()
 {
+    CopyTileToRegion();
     SaveMask();
 }
 
