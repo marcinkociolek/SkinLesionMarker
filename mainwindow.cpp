@@ -71,7 +71,13 @@ void PlaceShapeOnMask(Mat Mask, int x, int y, int size, unsigned short val)
 }
 
 //----------------------------------------------------------------------------------------------------------
-
+void FillHolesInMask(Mat Mask)
+{
+    FillBorderWithValue(Mask, 0xFFFF);
+    OneRegionFill5Fast1(Mask, 0xFFFF);
+    FillHoles(Mask, 3);
+    DeleteRegionFromImage(Mask, 0xFFFF);
+}
 
 //------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------
@@ -85,19 +91,23 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     prevPosX = -1;
     prevPosY = -1;
-    ui->comboBoxShowMode->addItem("Image");
-    ui->comboBoxShowMode->addItem("Image + Region");
-    ui->comboBoxShowMode->addItem("Image + Contour");
-    ui->comboBoxShowMode->addItem("Image + Transparent Region");
-    ui->comboBoxShowMode->addItem("Image + Transparent Contour");
-    ui->comboBoxShowMode->setCurrentIndex(1);
+    ui->comboBoxShowMode->addItem("Obraz");
+    ui->comboBoxShowMode->addItem("Obraz + Maska");
+    ui->comboBoxShowMode->addItem("Obraz + Kontur");
+    ui->comboBoxShowMode->addItem("Obraz + Maska przeźroczysta");
+    ui->comboBoxShowMode->addItem("Obraz + Kontur przeźroczysty");
+    ui->comboBoxShowMode->setCurrentIndex(3);
 
     ui->comboBoxDrawingTool->addItem("Brak");
     ui->comboBoxDrawingTool->addItem("Punkt");
     ui->comboBoxDrawingTool->addItem("Linia");
     //ui->comboBoxDrawingTool->addItem("Gumka");
-    ui->comboBoxDrawingTool->setCurrentIndex(1);
+    ui->comboBoxDrawingTool->setCurrentIndex(2);
 
+    int tileStep = ui->spinBoxTileStep->value();
+
+    ui->spinTilePositionX->setSingleStep(tileStep);
+    ui->spinTilePositionY->setSingleStep(tileStep);
 
     prevTilePositionX = -1;
     prevTilePositionY = -1;
@@ -141,16 +151,29 @@ void MainWindow::ShowImages()
         ShowsScaledImage(ImIn, "Input Image");
     if(ui->checkBoxShowMask->checkState())
         ShowsScaledImage(ShowRegion(changeRegionNumber(Mask,3,6)), "Mask");
+        //ShowsScaledImage(ShowRegion(Mask), "Mask");
     if(ui->checkBoxShowMaskOnImage->checkState())
         ShowsScaledImage(ShowSolidRegionOnImage(Mask, ImIn), "Mask on image");
+    {
+        //int tileStep = ui->spinBoxTileStep->value();
+        int tileSize = ui->spinBoxTileSize->value();
+
+        int tilePositionX = ui->spinTilePositionX->value();// * tileStep;
+        int tilePositionY = ui->spinTilePositionY->value();// * tileStep;
+
+        Mat ImToShow;
+        ShowSolidRegionOnImage(Mask, ImIn).copyTo(ImToShow);
+        rectangle(ImToShow, Rect(tilePositionX,tilePositionY, tileSize, tileSize), Scalar(0.0, 255.0, 0.0, 0.0), 4);
+        ShowsScaledImage(ImToShow, "Mask on image");
+    }
 
     if(ui->checkBoxShowTileOnImage->checkState())
     {
-        int tileStep = ui->spinBoxTileStep->value();
+        //int tileStep = ui->spinBoxTileStep->value();
         int tileSize = ui->spinBoxTileSize->value();
 
-        int tilePositionX = ui->spinTilePositionX->value() * tileStep;
-        int tilePositionY = ui->spinTilePositionY->value() * tileStep;
+        int tilePositionX = ui->spinTilePositionX->value();// * tileStep;
+        int tilePositionY = ui->spinTilePositionY->value();// * tileStep;
 
         Mat ImToShow;
         ImIn.copyTo(ImToShow);
@@ -185,11 +208,11 @@ void MainWindow::GetTile()
         return;
     if(ImIn.empty())
         return;
-    int tileStep = ui->spinBoxTileStep->value();
+    //int tileStep = ui->spinBoxTileStep->value();
     int tileSize = ui->spinBoxTileSize->value();
 
-    int tilePositionX = ui->spinTilePositionX->value() * tileStep;
-    int tilePositionY = ui->spinTilePositionY->value() * tileStep;
+    int tilePositionX = ui->spinTilePositionX->value();// * tileStep;
+    int tilePositionY = ui->spinTilePositionY->value();// * tileStep;
 
     prevTilePositionX = tilePositionX;
     prevTilePositionY = tilePositionY;
@@ -253,8 +276,8 @@ void MainWindow::ShowTile()
 void MainWindow::ScaleTile()
 {
     int scaledSize = ui->spinBoxTileSize->value() * ui->spinBoxTileScale->value();
-    int positionX = 530;
-    int positionY = 50;
+    int positionX = 462;
+    int positionY = 42;
     ui->widgetImage->setGeometry(positionX,positionY,scaledSize,scaledSize);
 }
 //------------------------------------------------------------------------------------------------------------------------------
@@ -332,7 +355,7 @@ void MainWindow::SaveMask()
 void MainWindow::on_pushButtonOpenImageFolder_clicked()
 {
     QFileDialog dialog(this, "Open Folder");
-    dialog.setFileMode(QFileDialog::Directory);
+    //dialog.setFileMode(QFileDialog::Directory);
 
     QString FolderQString = ui->lineEditImageFolder->text();
     path FolderPath;
@@ -403,13 +426,15 @@ void MainWindow::on_listWidgetImageFiles_currentTextChanged(const QString &curre
     if(ui->checkBoxShowMatInfo->checkState())
         ui->textEditOut->append(QString::fromStdString(MatPropetiesAsText(ImIn)));
 
-    int tileStep = ui->spinBoxTileStep->value();
+    //int tileStep = ui->spinBoxTileStep->value();
     int tileSize = ui->spinBoxTileSize->value();
     int imMaxX = ImIn.cols;
     int imMaxY = ImIn.rows;
 
-    ui->spinTilePositionX->setMaximum((imMaxX-tileSize - 1)/tileStep);
-    ui->spinTilePositionY->setMaximum((imMaxY-tileSize - 1)/tileStep);
+    //ui->spinTilePositionX->setMaximum((imMaxX-tileSize - 1)/tileStep);
+    //ui->spinTilePositionY->setMaximum((imMaxY-tileSize - 1)/tileStep);
+    ui->spinTilePositionX->setMaximum(imMaxX-tileSize - 1);
+    ui->spinTilePositionY->setMaximum(imMaxY-tileSize - 1);
     ShowImages();
     GetTile();
 
@@ -417,7 +442,10 @@ void MainWindow::on_listWidgetImageFiles_currentTextChanged(const QString &curre
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::on_checkBoxShowInput_toggled(bool checked)
 {
-    ShowImages();
+    if(checked)
+        ShowImages();
+    else
+        destroyWindow("Input Image");
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::on_spinBoxScalePower_valueChanged(int arg1)
@@ -435,6 +463,7 @@ void MainWindow::on_spinBoxScaleBase_valueChanged(int arg1)
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::on_spinTilePositionX_valueChanged(int arg1)
 {
+    FillHolesInMask(TileMask);
     CopyTileToRegion();
     GetTile();
 
@@ -442,6 +471,7 @@ void MainWindow::on_spinTilePositionX_valueChanged(int arg1)
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::on_spinTilePositionY_valueChanged(int arg1)
 {
+    FillHolesInMask(TileMask);
     CopyTileToRegion();
     GetTile();
 }
@@ -457,6 +487,14 @@ void MainWindow::on_spinBoxTileScale_valueChanged(int arg1)
 
 void MainWindow::on_spinBoxTileSize_valueChanged(int arg1)
 {
+    int tileSize = arg1;
+    int imMaxX = ImIn.cols;
+    int imMaxY = ImIn.rows;
+
+    ui->spinTilePositionX->setMaximum(imMaxX-tileSize - 1);
+    ui->spinTilePositionY->setMaximum(imMaxY-tileSize - 1);
+
+    FillHolesInMask(TileMask);
     GetTile();
     ScaleTile();
 }
@@ -472,10 +510,10 @@ void MainWindow::on_widgetImage_on_mouseMove(QPoint point, int butPressed)
         switch(ui->comboBoxDrawingTool->currentIndex())
         {
         case 1:
-            circle(TileMask, Point(x,y),radius,3,-1);
+            circle(TileMask, Point(x,y),radius - 1,3,-1);
             break;
         case 2:
-            circle(TileMask, Point(x,y),radius,3,-1);
+            circle(TileMask, Point(x,y),radius - 1,3,-1);
             if(prevPosX < 0 || prevPosX < 0)
             {
                 prevPosX = x;
@@ -483,32 +521,12 @@ void MainWindow::on_widgetImage_on_mouseMove(QPoint point, int butPressed)
             }
             else
             {
-                line(TileMask, Point(prevPosX,prevPosY), Point(x,y), 3, radius + 1);
+                line(TileMask, Point(prevPosX,prevPosY), Point(x,y), 3, radius);
                 prevPosX = x;
                 prevPosY = y;
             }
             break;
         }
-        /*
-        if(ui->checkBoxConnected->checkState())
-        {
-            circle(TileMask, Point(x,y),radius,3,-1);
-            if(prevPosX < 0 || prevPosX < 0)
-            {
-                prevPosX = x;
-                prevPosY = y;
-            }
-            else
-            {
-                line(TileMask, Point(prevPosX,prevPosY), Point(x,y), 3, radius + 1);
-                prevPosX = x;
-                prevPosY = y;
-            }
-        }
-        else
-            circle(TileMask, Point(x,y),radius,3,-1);
-        */
-        //PlaceShapeOnMask(TileMask, x, y, 0, 2);
     }
     else
     {
@@ -518,7 +536,6 @@ void MainWindow::on_widgetImage_on_mouseMove(QPoint point, int butPressed)
     if(butPressed & 0x2)
     {
         circle(TileMask, Point(x,y),radius,0,-1);
-        //PlaceShapeOnMask(TileMask, x, y, 0, 0);
     }
     ShowTile();
 }
@@ -535,10 +552,11 @@ void MainWindow::on_spinBoxTransparency_valueChanged(int arg1)
 
 void MainWindow::on_pushButtonFillHoles_clicked()
 {
-    FillBorderWithValue(TileMask, 0xFFFF);
-    OneRegionFill5Fast1(TileMask, 0xFFFF);
-    FillHoles(TileMask, 3);
-    DeleteRegionFromImage(TileMask, 0xFFFF);
+    FillHolesInMask(TileMask);
+    //FillBorderWithValue(TileMask, 0xFFFF);
+    //OneRegionFill5Fast1(TileMask, 0xFFFF);
+    //FillHoles(TileMask, 3);
+    //DeleteRegionFromImage(TileMask, 0xFFFF);
     ShowTile();
 }
 
@@ -555,17 +573,22 @@ void MainWindow::on_pushButtonReloadTile_clicked()
 
 void MainWindow::on_pushButtonCopyToMask_clicked()
 {
+    FillHolesInMask(TileMask);
     CopyTileToRegion();
     ShowImages();
 }
 
 void MainWindow::on_checkBoxShowMask_toggled(bool checked)
 {
-    ShowImages();
+    if(checked)
+        ShowImages();
+    else
+        destroyWindow("Mask");;
 }
 
 void MainWindow::on_pushButtonSaveMask_clicked()
 {
+    FillHolesInMask(TileMask);
     CopyTileToRegion();
     SaveMask();
 }
@@ -574,6 +597,7 @@ void MainWindow::on_pushButtonReloadMask_clicked()
 {
     LoadMask();
     ShowImages();
+    GetTile();
 }
 
 void MainWindow::on_lineEditRegexImageFile_returnPressed()
@@ -588,5 +612,24 @@ void MainWindow::on_lineEditImageFolder_returnPressed()
 
 void MainWindow::on_checkBoxShowMaskOnImage_toggled(bool checked)
 {
-    ShowImages();
+    if(checked)
+        ShowImages();
+    else
+        destroyWindow("Mask on image");
+}
+
+void MainWindow::on_spinBoxTileStep_valueChanged(int arg1)
+{
+    int tileStep = ui->spinBoxTileStep->value();
+
+    ui->spinTilePositionX->setSingleStep(tileStep);
+    ui->spinTilePositionY->setSingleStep(tileStep);
+}
+
+void MainWindow::on_checkBoxShowTileOnImage_toggled(bool checked)
+{
+    if(checked)
+        ShowImages();
+    else
+        destroyWindow("Tile On Image");
 }

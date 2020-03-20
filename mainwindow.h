@@ -90,6 +90,10 @@ private slots:
 
     void on_checkBoxShowMaskOnImage_toggled(bool checked);
 
+    void on_spinBoxTileStep_valueChanged(int arg1);
+
+    void on_checkBoxShowTileOnImage_toggled(bool checked);
+
 private:
     Ui::MainWindow *ui;
 };
