@@ -28,6 +28,8 @@ public:
 
     boost::filesystem::path imageFilePath;
 
+    bool allowMoveTile;
+
 
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
@@ -39,6 +41,7 @@ public:
     int CopyTileToRegion();
     void ShowTile();
     void ScaleTile();
+    void ScaleImMiniature();
     void LoadMask();
     void SaveMask();
 
@@ -65,6 +68,7 @@ private slots:
 
 
     void on_widgetImage_on_mouseMove(QPoint point, int butPressed );
+    void on_widgetImage_on_mousePressed(QPoint point, int butPressed);
 
     void on_comboBoxShowMode_currentIndexChanged(int index);
 
@@ -93,6 +97,12 @@ private slots:
     void on_spinBoxTileStep_valueChanged(int arg1);
 
     void on_checkBoxShowTileOnImage_toggled(bool checked);
+
+    void on_widgetImageWhole_on_mouseMove(QPoint point, int butPressed );
+
+    void on_widgetImageWhole_on_mousePressed(QPoint point, int butPressed  );
+
+
 
 private:
     Ui::MainWindow *ui;

@@ -27,6 +27,8 @@
 
 #include <tiffio.h>
 
+const int miniatureScale = 12;
+
 typedef MazdaRoi<unsigned int, 2> MR2DType;
 
 using namespace std;
@@ -112,7 +114,10 @@ MainWindow::MainWindow(QWidget *parent) :
     prevTilePositionX = -1;
     prevTilePositionY = -1;
 
+    allowMoveTile = 1;
+
     ScaleTile();
+
 }
 
 MainWindow::~MainWindow()
@@ -143,6 +148,8 @@ void MainWindow::OpenImagesFolder()
         }
         ui->listWidgetImageFiles->addItem(QString::fromStdWString(PathLocal.filename().wstring()));
     }
+    if(ui->listWidgetImageFiles->count())
+        ui->listWidgetImageFiles->setCurrentRow(0);
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::ShowImages()
@@ -167,19 +174,30 @@ void MainWindow::ShowImages()
         ShowsScaledImage(ImToShow, "Mask on image");
     }
 
+    int tileSize = ui->spinBoxTileSize->value();
+
+    int tilePositionX = ui->spinTilePositionX->value();// * tileStep;
+    int tilePositionY = ui->spinTilePositionY->value();// * tileStep;
+
+
     if(ui->checkBoxShowTileOnImage->checkState())
     {
         //int tileStep = ui->spinBoxTileStep->value();
-        int tileSize = ui->spinBoxTileSize->value();
+        //int tileSize = ui->spinBoxTileSize->value();
 
-        int tilePositionX = ui->spinTilePositionX->value();// * tileStep;
-        int tilePositionY = ui->spinTilePositionY->value();// * tileStep;
+        //int tilePositionX = ui->spinTilePositionX->value();// * tileStep;
+        //int tilePositionY = ui->spinTilePositionY->value();// * tileStep;
 
         Mat ImToShow;
         ImIn.copyTo(ImToShow);
         rectangle(ImToShow, Rect(tilePositionX,tilePositionY, tileSize, tileSize), Scalar(0.0, 255.0, 0.0, 0.0), 4);
         ShowsScaledImage(ImToShow, "Tile On Image");
     }
+    Mat ImToShow;
+    ImIn.copyTo(ImToShow);
+    rectangle(ImToShow, Rect(tilePositionX,tilePositionY, tileSize, tileSize), Scalar(0.0, 255.0, 0.0, 0.0), miniatureScale);
+    ui->widgetImageWhole->paintBitmap(ImToShow);
+    ui->widgetImageWhole->repaint();
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::ShowsScaledImage(Mat Im, string ImWindowName)
@@ -279,6 +297,18 @@ void MainWindow::ScaleTile()
     int positionX = 462;
     int positionY = 42;
     ui->widgetImage->setGeometry(positionX,positionY,scaledSize,scaledSize);
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::ScaleImMiniature()
+{
+    if(ImIn.empty())
+        return;
+    int scale = 12;
+    int scaledSizeX = ImIn.cols/miniatureScale;
+    int scaledSizeY = ImIn.rows/miniatureScale;
+    int positionX = 10;
+    int positionY = 580;
+    ui->widgetImageWhole->setGeometry(positionX,positionY,scaledSizeX,scaledSizeY);
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::LoadMask()
@@ -435,6 +465,7 @@ void MainWindow::on_listWidgetImageFiles_currentTextChanged(const QString &curre
     //ui->spinTilePositionY->setMaximum((imMaxY-tileSize - 1)/tileStep);
     ui->spinTilePositionX->setMaximum(imMaxX-tileSize - 1);
     ui->spinTilePositionY->setMaximum(imMaxY-tileSize - 1);
+    ScaleImMiniature();
     ShowImages();
     GetTile();
 
@@ -463,6 +494,8 @@ void MainWindow::on_spinBoxScaleBase_valueChanged(int arg1)
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::on_spinTilePositionX_valueChanged(int arg1)
 {
+    if(!allowMoveTile)
+        return;
     FillHolesInMask(TileMask);
     CopyTileToRegion();
     GetTile();
@@ -471,6 +504,8 @@ void MainWindow::on_spinTilePositionX_valueChanged(int arg1)
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::on_spinTilePositionY_valueChanged(int arg1)
 {
+    if(!allowMoveTile)
+        return;
     FillHolesInMask(TileMask);
     CopyTileToRegion();
     GetTile();
@@ -535,7 +570,25 @@ void MainWindow::on_widgetImage_on_mouseMove(QPoint point, int butPressed)
     }
     if(butPressed & 0x2)
     {
-        circle(TileMask, Point(x,y),radius,0,-1);
+        circle(TileMask, Point(x,y),radius - 1,0,-1);
+    }
+    ShowTile();
+}
+void MainWindow::on_widgetImage_on_mousePressed(QPoint point, int butPressed)
+{
+    int radius = ui->spinBoxPenSize->value();
+    int tileScale = ui->spinBoxTileScale->value();
+    int x = point.x() / tileScale;
+    int y = point.y() / tileScale;
+    if(butPressed & 0x1)
+    {
+        prevPosX = x;
+        prevPosY = y;
+        circle(TileMask, Point(x,y),radius - 1,3,-1);
+    }
+    if(butPressed & 0x2)
+    {
+        circle(TileMask, Point(x,y),radius - 1,0,-1);
     }
     ShowTile();
 }
@@ -633,3 +686,37 @@ void MainWindow::on_checkBoxShowTileOnImage_toggled(bool checked)
     else
         destroyWindow("Tile On Image");
 }
+
+void MainWindow::on_widgetImageWhole_on_mouseMove(QPoint point, int butPressed )
+{
+
+}
+
+void MainWindow::on_widgetImageWhole_on_mousePressed(QPoint point, int butPressed )
+{
+    int tileSize = ui->spinBoxTileSize->value();
+    int tileHalfSize = tileSize /2;
+    int tileStep = ui->spinBoxTileStep->value();
+    int maxXadjusted = ImIn.cols - tileSize - 1;
+    int maxYadjusted = ImIn.cols - tileSize - 1;
+    int x = point.x() * miniatureScale - tileHalfSize;//((point.x() * miniatureScale - tileHalfSize) / tileStep) * tileStep;
+    int y = point.y() * miniatureScale - tileHalfSize;//((point.y() * miniatureScale - tileHalfSize) / tileStep) * tileStep;
+    if(x < 0)
+        x = 0;
+    if(x > maxXadjusted)
+        x = maxXadjusted;
+    if(y < 0)
+        y = 0;
+    if(y > maxYadjusted)
+        y = maxYadjusted;
+    allowMoveTile = 0;
+    ui->spinTilePositionX->setValue(x);
+    ui->spinTilePositionY->setValue(y);
+    allowMoveTile = 1;
+    FillHolesInMask(TileMask);
+    CopyTileToRegion();
+    GetTile();
+
+}
+
+
