@@ -104,6 +104,8 @@ private slots:
 
 
 
+    void on_spinBoxScaleBaseWhole_valueChanged(int arg1);
+
 private:
     Ui::MainWindow *ui;
 };

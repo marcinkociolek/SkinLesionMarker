@@ -93,11 +93,11 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     prevPosX = -1;
     prevPosY = -1;
-    ui->comboBoxShowMode->addItem("Obraz");
-    ui->comboBoxShowMode->addItem("Obraz + Maska");
-    ui->comboBoxShowMode->addItem("Obraz + Kontur");
-    ui->comboBoxShowMode->addItem("Obraz + Maska przeźroczysta");
-    ui->comboBoxShowMode->addItem("Obraz + Kontur przeźroczysty");
+    ui->comboBoxShowMode->addItem("Bez Maski");
+    ui->comboBoxShowMode->addItem("Maska");
+    ui->comboBoxShowMode->addItem("Kontur");
+    ui->comboBoxShowMode->addItem("Maska przeźroczysta");
+    ui->comboBoxShowMode->addItem("Kontur przeźroczysty");
     ui->comboBoxShowMode->setCurrentIndex(3);
 
     ui->comboBoxDrawingTool->addItem("Brak");
@@ -160,7 +160,7 @@ void MainWindow::ShowImages()
         ShowsScaledImage(ShowRegion(changeRegionNumber(Mask,3,6)), "Mask");
         //ShowsScaledImage(ShowRegion(Mask), "Mask");
     if(ui->checkBoxShowMaskOnImage->checkState())
-        ShowsScaledImage(ShowSolidRegionOnImage(Mask, ImIn), "Mask on image");
+        //ShowsScaledImage(ShowSolidRegionOnImage(Mask, ImIn), "Mask on image");
     {
         //int tileStep = ui->spinBoxTileStep->value();
         int tileSize = ui->spinBoxTileSize->value();
@@ -194,8 +194,10 @@ void MainWindow::ShowImages()
         ShowsScaledImage(ImToShow, "Tile On Image");
     }
     Mat ImToShow;
+
     ImIn.copyTo(ImToShow);
-    rectangle(ImToShow, Rect(tilePositionX,tilePositionY, tileSize, tileSize), Scalar(0.0, 255.0, 0.0, 0.0), miniatureScale);
+    rectangle(ImToShow, Rect(tilePositionX,tilePositionY, tileSize, tileSize), Scalar(0.0, 255.0, 0.0, 0.0),
+              ui->spinBoxScaleBaseWhole->value());
     ui->widgetImageWhole->paintBitmap(ImToShow);
     ui->widgetImageWhole->repaint();
 }
@@ -294,8 +296,8 @@ void MainWindow::ShowTile()
 void MainWindow::ScaleTile()
 {
     int scaledSize = ui->spinBoxTileSize->value() * ui->spinBoxTileScale->value();
-    int positionX = 462;
-    int positionY = 42;
+    int positionX = 530;
+    int positionY = 40;
     ui->widgetImage->setGeometry(positionX,positionY,scaledSize,scaledSize);
 }
 //------------------------------------------------------------------------------------------------------------------------------
@@ -303,11 +305,11 @@ void MainWindow::ScaleImMiniature()
 {
     if(ImIn.empty())
         return;
-    int scale = 12;
-    int scaledSizeX = ImIn.cols/miniatureScale;
-    int scaledSizeY = ImIn.rows/miniatureScale;
-    int positionX = 10;
-    int positionY = 580;
+    int scale = ui->spinBoxScaleBaseWhole->value();
+    int scaledSizeX = ImIn.cols/scale;
+    int scaledSizeY = ImIn.rows/scale;
+    int positionX = 0;
+    int positionY = 550;
     ui->widgetImageWhole->setGeometry(positionX,positionY,scaledSizeX,scaledSizeY);
 }
 //------------------------------------------------------------------------------------------------------------------------------
@@ -699,6 +701,7 @@ void MainWindow::on_widgetImageWhole_on_mousePressed(QPoint point, int butPresse
     int tileStep = ui->spinBoxTileStep->value();
     int maxXadjusted = ImIn.cols - tileSize - 1;
     int maxYadjusted = ImIn.cols - tileSize - 1;
+    int miniatureScale = ui->spinBoxScaleBaseWhole->value();
     int x = point.x() * miniatureScale - tileHalfSize;//((point.x() * miniatureScale - tileHalfSize) / tileStep) * tileStep;
     int y = point.y() * miniatureScale - tileHalfSize;//((point.y() * miniatureScale - tileHalfSize) / tileStep) * tileStep;
     if(x < 0)
@@ -720,3 +723,9 @@ void MainWindow::on_widgetImageWhole_on_mousePressed(QPoint point, int butPresse
 }
 
 
+
+void MainWindow::on_spinBoxScaleBaseWhole_valueChanged(int arg1)
+{
+    ScaleImMiniature();
+    ShowImages();
+}
