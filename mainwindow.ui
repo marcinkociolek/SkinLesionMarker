@@ -107,7 +107,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>.+.tif</string>
+      <string>.+.tif+</string>
      </property>
     </widget>
     <widget class="QListWidget" name="listWidgetImageFiles">
@@ -405,6 +405,19 @@
      </property>
      <property name="checked">
       <bool>false</bool>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBoxGrabKeyboard">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>160</y>
+       <width>171</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>włącz skróty klawiatury</string>
      </property>
     </widget>
    </widget>

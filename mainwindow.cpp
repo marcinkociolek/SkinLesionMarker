@@ -116,6 +116,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     allowMoveTile = 1;
 
+    //ui->widgetImage->setFocus();
+
+
     ScaleTile();
 
 }
@@ -592,6 +595,14 @@ void MainWindow::on_widgetImage_on_mousePressed(QPoint point, int butPressed)
     {
         circle(TileMask, Point(x,y),radius - 1,0,-1);
     }
+    if(butPressed & 0x4)
+    {
+        ui->spinBoxTransparency->setValue(0);
+    }
+    if(butPressed & 0x8)
+    {
+        ui->spinBoxTransparency->setValue(30);
+    }
     ShowTile();
 }
 
@@ -728,4 +739,49 @@ void MainWindow::on_spinBoxScaleBaseWhole_valueChanged(int arg1)
 {
     ScaleImMiniature();
     ShowImages();
+}
+
+void MainWindow::on_widgetImage_on_KeyPressed(int button)
+{
+    switch (button)
+    {
+    case Qt::Key_Z:
+        ui->spinBoxTransparency->setValue(0);
+        break;
+    case Qt::Key_X:
+        ui->spinBoxTransparency->setValue(16);
+        break;
+    case Qt::Key_Up:
+        ui->spinTilePositionY->setValue(ui->spinTilePositionY->value() - ui->spinTilePositionY->singleStep());
+        break;
+    case Qt::Key_Down:
+        ui->spinTilePositionY->setValue(ui->spinTilePositionY->value() + ui->spinTilePositionY->singleStep());
+        break;
+    case Qt::Key_Left:
+        ui->spinTilePositionX->setValue(ui->spinTilePositionX->value() - ui->spinTilePositionX->singleStep());
+        break;
+    case Qt::Key_Right:
+        ui->spinTilePositionX->setValue(ui->spinTilePositionX->value() + ui->spinTilePositionX->singleStep());
+        break;
+    case Qt::Key_Space:
+        FillHolesInMask(TileMask);
+        break;
+    case Qt::Key_Period:
+        ui->spinBoxTileSize->setValue(ui->spinBoxTileSize->value() + ui->spinBoxTileSize->singleStep());
+        break;
+    case Qt::Key_Comma:
+        ui->spinBoxTileSize->setValue(ui->spinBoxTileSize->value() - ui->spinBoxTileSize->singleStep());
+        break;
+
+    default:
+        break;
+    }
+}
+
+void MainWindow::on_checkBoxGrabKeyboard_toggled(bool checked)
+{
+    if(checked)
+        ui->widgetImage->grabKeyboard();
+    else
+        ui->widgetImage->releaseKeyboard();
 }

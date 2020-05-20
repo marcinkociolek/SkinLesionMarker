@@ -106,6 +106,10 @@ private slots:
 
     void on_spinBoxScaleBaseWhole_valueChanged(int arg1);
 
+    void on_widgetImage_on_KeyPressed(int );
+
+    void on_checkBoxGrabKeyboard_toggled(bool checked);
+
 private:
     Ui::MainWindow *ui;
 };
