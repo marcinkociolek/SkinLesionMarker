@@ -383,6 +383,46 @@ void MainWindow::SaveMask()
     imwrite(maskFilePath.string(),Mask);
 }
 //------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::SaveImages()
+{
+    if(ImIn.empty())
+        return;
+    if(Mask.empty())
+        return;
+
+    if(TileMask.empty() || TileIm.empty())
+        return;
+
+
+    QString ImageFolderQStr = ui->lineEditImageFolder->text();
+    path largeImageFilePath = ImageFolderQStr.toStdWString();
+    largeImageFilePath.append(imageFilePath.stem().string() + "_" + ItoStrLZ(ui->spinBoxSaveImNr->value(), 2) + "L.jpg");
+
+
+    path miniImageFilePath = ImageFolderQStr.toStdWString();
+    miniImageFilePath.append(imageFilePath.stem().string() + "_" + ItoStrLZ(ui->spinBoxSaveImNr->value(), 2) + "M.jpg");
+
+    int tileSize = ui->spinBoxTileSize->value();
+
+    int tilePositionX = ui->spinTilePositionX->value();// * tileStep;
+    int tilePositionY = ui->spinTilePositionY->value();// * tileStep;
+
+    Mat ImToSave;
+    ShowSolidRegionOnImage(Mask, ImIn).copyTo(ImToSave);
+    rectangle(ImToSave, Rect(tilePositionX,tilePositionY, tileSize, tileSize), Scalar(0.0, 255.0, 0.0, 0.0), 4);
+
+    imwrite(largeImageFilePath.string(),ImToSave);
+
+
+
+    Mat ImToSaveMini;
+
+    ImToSaveMini = ShowSolidRegionOnImage(GetContour5(TileMask), TileIm);
+    imwrite(miniImageFilePath.string(),ImToSaveMini);
+    ui->spinBoxSaveImNr->setValue(ui->spinBoxSaveImNr->value() + 1);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------
 //          Slots
 //------------------------------------------------------------------------------------------------------------------------------
@@ -473,6 +513,7 @@ void MainWindow::on_listWidgetImageFiles_currentTextChanged(const QString &curre
     ScaleImMiniature();
     ShowImages();
     GetTile();
+    ui->spinBoxSaveImNr->setValue(1);
 
 }
 //------------------------------------------------------------------------------------------------------------------------------
@@ -784,4 +825,9 @@ void MainWindow::on_checkBoxGrabKeyboard_toggled(bool checked)
         ui->widgetImage->grabKeyboard();
     else
         ui->widgetImage->releaseKeyboard();
+}
+
+void MainWindow::on_pushButtonSaveOut_clicked()
+{
+    SaveImages();
 }

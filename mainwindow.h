@@ -26,6 +26,8 @@ public:
     int prevTilePositionX;
     int prevTilePositionY;
 
+
+
     boost::filesystem::path imageFilePath;
 
     bool allowMoveTile;
@@ -44,6 +46,7 @@ public:
     void ScaleImMiniature();
     void LoadMask();
     void SaveMask();
+    void SaveImages();
 
 
 private slots:
@@ -109,6 +112,8 @@ private slots:
     void on_widgetImage_on_KeyPressed(int );
 
     void on_checkBoxGrabKeyboard_toggled(bool checked);
+
+    void on_pushButtonSaveOut_clicked();
 
 private:
     Ui::MainWindow *ui;
