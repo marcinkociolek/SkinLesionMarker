@@ -116,6 +116,8 @@ private slots:
 
     void on_pushButtonSaveOut_clicked();
 
+    void on_spinBoxImPartition_valueChanged(int arg1);
+
 private:
     Ui::MainWindow *ui;
 };

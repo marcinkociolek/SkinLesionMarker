@@ -219,11 +219,9 @@ void MainWindow::ShowsScaledImage(Mat Im, string ImWindowName)
 
     ImToShow = Im.clone();
 
-    double displayScale = pow(double(ui->spinBoxScaleBase->value()), double(ui->spinBoxScalePower->value()));
+    double displayScale = 1.0 / double(ui->spinBoxScaleBase->value());
     if (displayScale != 1.0)
         cv::resize(ImToShow,ImToShow,Size(), displayScale, displayScale, INTER_AREA);
-    if(ui->checkBoxImRotate->checkState())
-        rotate(ImToShow,ImToShow, ROTATE_90_CLOCKWISE);
     imshow(ImWindowName, ImToShow);
 }
 //------------------------------------------------------------------------------------------------------------------------------
@@ -236,21 +234,47 @@ void MainWindow::ShowsPartialScaledImage(Mat Im, string ImWindowName)
     }
 
     int partCount = ui->spinBoxImPartition->value();
-    int partSizeX = ImIn.cols / partCount;
-    int partSizeY = ImIn.rows / partCount;
-
-    double displayScale = pow(double(ui->spinBoxScaleBase->value()), double(ui->spinBoxScalePower->value())/double(partCount));
+    double displayScale = double(partCount) / double(ui->spinBoxScaleBase->value());
 
     int tileSize = ui->spinBoxTileSize->value();
 
     int tilePositionX = ui->spinTilePositionX->value();// * tileStep;
     int tilePositionY = ui->spinTilePositionY->value();// * tileStep;
 
+
+    int partSizeX = ImIn.cols / partCount;
+    int partSizeY = ImIn.rows / partCount;
+
+
     int partPositionX = (tilePositionX / partSizeX) * partSizeX;
     int partPositionY = (tilePositionY / partSizeY) * partSizeY;
 
+    if(partCount >1)
+    {
+        partSizeX += tileSize * 2;
+
+        if(partPositionX)
+        {
+            if(partPositionX > Im.cols - partSizeX)
+                partPositionX = Im.cols - partSizeX;
+            else
+                partPositionX -= tileSize;
+        }
+
+
+        partSizeY += tileSize * 2;
+        if(partPositionY)
+        {
+            if(partPositionY > Im.rows - partSizeY)
+                partPositionY = Im.rows - partSizeY;
+            else
+                partPositionY -= tileSize;
+        }
+
+    }
+
     Mat ImToShow;
-    ImToShow(Rect(partPositionX, partPositionY, partSizeX, partSizeY)).copyTo(Im);
+    Im(Rect(partPositionX, partPositionY, partSizeX, partSizeY)).copyTo(ImToShow);
 
     if (displayScale != 1.0)
         cv::resize(ImToShow,ImToShow,Size(), displayScale, displayScale, INTER_AREA);
@@ -509,11 +533,7 @@ void MainWindow::on_listWidgetImageFiles_currentTextChanged(const QString &curre
 
     if(ui->checkBoxAutocleanOut->checkState())
         ui->textEditOut->clear();
-    int flags;
-    if(ui->checkBoxLoadAnydepth->checkState())
-        flags = CV_LOAD_IMAGE_ANYDEPTH;
-    else
-        flags = IMREAD_COLOR;
+    int flags = IMREAD_COLOR;;
 
     ImIn = imread(fileToOpenStr, flags);
 
@@ -862,4 +882,9 @@ void MainWindow::on_checkBoxGrabKeyboard_toggled(bool checked)
 void MainWindow::on_pushButtonSaveOut_clicked()
 {
     SaveImages();
+}
+
+void MainWindow::on_spinBoxImPartition_valueChanged(int arg1)
+{
+     ShowImages();
 }

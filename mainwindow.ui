@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1280</width>
-    <height>720</height>
+    <height>847</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -162,22 +162,6 @@
       <bool>true</bool>
      </property>
     </widget>
-    <widget class="QCheckBox" name="checkBoxImRotate">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>300</y>
-       <width>101</width>
-       <height>20</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Obróć obraz</string>
-     </property>
-    </widget>
     <widget class="QCheckBox" name="checkBoxShowInput">
      <property name="geometry">
       <rect>
@@ -235,7 +219,7 @@
     <widget class="QCheckBox" name="checkBoxShowTiffInfo">
      <property name="geometry">
       <rect>
-       <x>160</x>
+       <x>130</x>
        <y>250</y>
        <width>141</width>
        <height>25</height>
@@ -248,68 +232,11 @@
       <bool>false</bool>
      </property>
     </widget>
-    <widget class="QLabel" name="labelScalePower">
+    <widget class="QCheckBox" name="checkBoxAutocleanOut">
      <property name="geometry">
       <rect>
        <x>130</x>
        <y>300</y>
-       <width>101</width>
-       <height>25</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Skala podstawa</string>
-     </property>
-    </widget>
-    <widget class="QSpinBox" name="spinBoxScalePower">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="geometry">
-      <rect>
-       <x>240</x>
-       <y>300</y>
-       <width>43</width>
-       <height>24</height>
-      </rect>
-     </property>
-     <property name="suffix">
-      <string/>
-     </property>
-     <property name="minimum">
-      <number>-1</number>
-     </property>
-     <property name="maximum">
-      <number>1</number>
-     </property>
-     <property name="value">
-      <number>-1</number>
-     </property>
-    </widget>
-    <widget class="QCheckBox" name="checkBoxLoadAnydepth">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>280</y>
-       <width>141</width>
-       <height>20</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Wczytaj obr mono</string>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
-    </widget>
-    <widget class="QCheckBox" name="checkBoxAutocleanOut">
-     <property name="geometry">
-      <rect>
-       <x>120</x>
-       <y>360</y>
        <width>191</width>
        <height>25</height>
       </rect>
@@ -600,28 +527,6 @@
       </rect>
      </property>
     </widget>
-   </widget>
-   <widget class="MyImageWidget" name="widgetImageWhole" native="true">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>550</y>
-      <width>120</width>
-      <height>80</height>
-     </rect>
-    </property>
-    <property name="sizePolicy">
-     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-      <horstretch>0</horstretch>
-      <verstretch>0</verstretch>
-     </sizepolicy>
-    </property>
-    <property name="cursor">
-     <cursorShape>CrossCursor</cursorShape>
-    </property>
-    <property name="mouseTracking">
-     <bool>false</bool>
-    </property>
    </widget>
    <widget class="QFrame" name="frame_5">
     <property name="geometry">
@@ -917,6 +822,28 @@
       <number>1</number>
      </property>
     </widget>
+   </widget>
+   <widget class="MyImageWidget" name="widgetImageWhole" native="true">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>550</y>
+      <width>120</width>
+      <height>80</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="cursor">
+     <cursorShape>CrossCursor</cursorShape>
+    </property>
+    <property name="mouseTracking">
+     <bool>false</bool>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
