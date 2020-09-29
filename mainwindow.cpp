@@ -174,7 +174,8 @@ void MainWindow::ShowImages()
         Mat ImToShow;
         ShowSolidRegionOnImage(Mask, ImIn).copyTo(ImToShow);
         rectangle(ImToShow, Rect(tilePositionX,tilePositionY, tileSize, tileSize), Scalar(0.0, 255.0, 0.0, 0.0), 4);
-        ShowsScaledImage(ImToShow, "Mask on image");
+        //ShowsScaledImage(ImToShow, "Mask on image");
+        ShowsPartialScaledImage(ImToShow, "Mask on image");
     }
 
     int tileSize = ui->spinBoxTileSize->value();
@@ -195,6 +196,7 @@ void MainWindow::ShowImages()
         ImIn.copyTo(ImToShow);
         rectangle(ImToShow, Rect(tilePositionX,tilePositionY, tileSize, tileSize), Scalar(0.0, 255.0, 0.0, 0.0), 4);
         ShowsScaledImage(ImToShow, "Tile On Image");
+
     }
     Mat ImToShow;
 
@@ -222,6 +224,36 @@ void MainWindow::ShowsScaledImage(Mat Im, string ImWindowName)
         cv::resize(ImToShow,ImToShow,Size(), displayScale, displayScale, INTER_AREA);
     if(ui->checkBoxImRotate->checkState())
         rotate(ImToShow,ImToShow, ROTATE_90_CLOCKWISE);
+    imshow(ImWindowName, ImToShow);
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::ShowsPartialScaledImage(Mat Im, string ImWindowName)
+{
+    if(Im.empty())
+    {
+        ui->textEditOut->append("Empty Image to show");
+        return;
+    }
+
+    int partCount = ui->spinBoxImPartition->value();
+    int partSizeX = ImIn.cols / partCount;
+    int partSizeY = ImIn.rows / partCount;
+
+    double displayScale = pow(double(ui->spinBoxScaleBase->value()), double(ui->spinBoxScalePower->value())/double(partCount));
+
+    int tileSize = ui->spinBoxTileSize->value();
+
+    int tilePositionX = ui->spinTilePositionX->value();// * tileStep;
+    int tilePositionY = ui->spinTilePositionY->value();// * tileStep;
+
+    int partPositionX = (tilePositionX / partSizeX) * partSizeX;
+    int partPositionY = (tilePositionY / partSizeY) * partSizeY;
+
+    Mat ImToShow;
+    ImToShow(Rect(partPositionX, partPositionY, partSizeX, partSizeY)).copyTo(Im);
+
+    if (displayScale != 1.0)
+        cv::resize(ImToShow,ImToShow,Size(), displayScale, displayScale, INTER_AREA);
     imshow(ImWindowName, ImToShow);
 }
 //------------------------------------------------------------------------------------------------------------------------------

@@ -39,6 +39,7 @@ public:
     void MainWindow::OpenImagesFolder();
     void ShowImages();
     void ShowsScaledImage(cv::Mat Im, std::string ImWindowName);
+    void ShowsPartialScaledImage(cv::Mat Im, std::string ImWindowName);
     void GetTile();
     int CopyTileToRegion();
     void ShowTile();
