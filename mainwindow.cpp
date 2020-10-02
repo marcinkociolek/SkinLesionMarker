@@ -183,7 +183,7 @@ void MainWindow::ShowImages()
     int tilePositionX = ui->spinTilePositionX->value();// * tileStep;
     int tilePositionY = ui->spinTilePositionY->value();// * tileStep;
 
-
+/*
     if(ui->checkBoxShowTileOnImage->checkState())
     {
         //int tileStep = ui->spinBoxTileStep->value();
@@ -198,11 +198,34 @@ void MainWindow::ShowImages()
         ShowsScaledImage(ImToShow, "Tile On Image");
 
     }
+    */
     Mat ImToShow;
 
     ImIn.copyTo(ImToShow);
     rectangle(ImToShow, Rect(tilePositionX,tilePositionY, tileSize, tileSize), Scalar(0.0, 255.0, 0.0, 0.0),
               ui->spinBoxScaleBaseWhole->value());
+
+    int fragmentCount = ui->spinBoxImPartition->value();
+
+    int fragmentOffsetX = ImIn.cols / fragmentCount;
+    int fragmentOffsetY = ImIn.rows / fragmentCount;
+
+    int fragmentSizeX = fragmentOffsetX + tileSize;
+    int fragmentSizeY = fragmentOffsetY + tileSize;
+
+
+    for(int fragmentY = 0; fragmentY < fragmentCount; fragmentY++)
+    {
+        for(int fragmentX = 0; fragmentX < fragmentCount; fragmentX++)
+        {
+
+            int fragmentPositionY = fragmentY * fragmentOffsetY;
+            int fragmentPositionX = fragmentX * fragmentOffsetX;
+            rectangle(ImToShow, Rect(fragmentPositionX,fragmentPositionY, fragmentSizeX, fragmentSizeY), Scalar(255.0, 255.0, 0.0, 0.0),
+                      ui->spinBoxScaleBaseWhole->value());
+        }
+    }
+
     ui->widgetImageWhole->paintBitmap(ImToShow);
     ui->widgetImageWhole->repaint();
 }
@@ -233,15 +256,58 @@ void MainWindow::ShowsPartialScaledImage(Mat Im, string ImWindowName)
         return;
     }
 
-    int partCount = ui->spinBoxImPartition->value();
-    double displayScale = double(partCount) / double(ui->spinBoxScaleBase->value());
-
+    int fragmentCount = ui->spinBoxImPartition->value();
     int tileSize = ui->spinBoxTileSize->value();
 
-    int tilePositionX = ui->spinTilePositionX->value();// * tileStep;
-    int tilePositionY = ui->spinTilePositionY->value();// * tileStep;
+
+    double displayScale = /*double(fragmentCount)*/ 1 / double(ui->spinBoxScaleBase->value());
+
+    int tilePositionX = ui->spinTilePositionX->value();
+    int tilePositionY = ui->spinTilePositionY->value();
+
+    int fragmentOffsetX = ImIn.cols / fragmentCount;
+    int fragmentOffsetY = ImIn.rows / fragmentCount;
 
 
+    int fragmentY = tilePositionY / fragmentOffsetY;
+    int fragmentX = tilePositionX / fragmentOffsetX;
+
+    int fragmentPositionY = fragmentY * fragmentOffsetY;
+    int fragmentPositionX = fragmentX * fragmentOffsetX;
+/*
+    for(int fragmentY = 0; fragmentY < fragmentCount; fragmentY++)
+    {
+        for(int fragmentX = 0; fragmentX < fragmentCount; fragmentX++)
+        {
+
+            int fragmentPositionY = fragmentY * fragmentOffsetY;
+            int fragmentPositionX = fragmentX * fragmentOffsetX;
+            rectangle(ImToShow, Rect(fragmentPositionX,fragmentPositionY, fragmentSizeX, fragmentSizeY), Scalar(255.0, 255.0, 0.0, 0.0),
+                      ui->spinBoxScaleBaseWhole->value());
+        }
+    }
+*/
+    int fragmentSizeX, fragmentSizeY;
+    if (fragmentX < (fragmentCount - 1))
+        fragmentSizeX = fragmentOffsetX + tileSize;
+    else
+        fragmentSizeX = fragmentOffsetX;
+
+    if (fragmentY < (fragmentCount - 1))
+        fragmentSizeY = fragmentOffsetY + tileSize;
+    else
+        fragmentSizeY = fragmentOffsetY;
+
+
+    Mat ImToShow;
+    Im(Rect(fragmentPositionX,fragmentPositionY, fragmentSizeX, fragmentSizeY)).copyTo(ImToShow);
+
+
+
+
+
+
+/*
     int partSizeX = ImIn.cols / partCount;
     int partSizeY = ImIn.rows / partCount;
 
@@ -275,7 +341,7 @@ void MainWindow::ShowsPartialScaledImage(Mat Im, string ImWindowName)
 
     Mat ImToShow;
     Im(Rect(partPositionX, partPositionY, partSizeX, partSizeY)).copyTo(ImToShow);
-
+*/
     if (displayScale != 1.0)
         cv::resize(ImToShow,ImToShow,Size(), displayScale, displayScale, INTER_AREA);
     imshow(ImWindowName, ImToShow);
@@ -356,7 +422,7 @@ void MainWindow::ScaleTile()
 {
     int scaledSize = ui->spinBoxTileSize->value() * ui->spinBoxTileScale->value();
     int positionX = 530;
-    int positionY = 40;
+    int positionY = 0;
     ui->widgetImage->setGeometry(positionX,positionY,scaledSize,scaledSize);
 }
 //------------------------------------------------------------------------------------------------------------------------------
@@ -368,7 +434,7 @@ void MainWindow::ScaleImMiniature()
     int scaledSizeX = ImIn.cols/scale;
     int scaledSizeY = ImIn.rows/scale;
     int positionX = 0;
-    int positionY = 550;
+    int positionY = 460;
     ui->widgetImageWhole->setGeometry(positionX,positionY,scaledSizeX,scaledSizeY);
 }
 //------------------------------------------------------------------------------------------------------------------------------
