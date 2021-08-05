@@ -36,7 +36,7 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    void MainWindow::OpenImagesFolder();
+    void OpenImagesFolder();
     void ShowImages();
     void ShowsScaledImage(cv::Mat Im, std::string ImWindowName);
     void ShowsPartialScaledImage(cv::Mat Im, std::string ImWindowName);
@@ -117,6 +117,8 @@ private slots:
     void on_pushButtonSaveOut_clicked();
 
     void on_spinBoxImPartition_valueChanged(int arg1);
+
+    void on_checkBoxMagnify_stateChanged(int arg1);
 
 private:
     Ui::MainWindow *ui;

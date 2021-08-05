@@ -420,7 +420,16 @@ void MainWindow::ShowTile()
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::ScaleTile()
 {
-    int scaledSize = ui->spinBoxTileSize->value() * ui->spinBoxTileScale->value();
+    int scaledSize;
+    if(ui->checkBoxMagnify->checkState())
+    {
+        scaledSize = ui->spinBoxTileSize->value() * ui->spinBoxTileScale->value();
+    }
+    else
+    {
+        scaledSize = ui->spinBoxTileSize->value() / ui->spinBoxTileScale->value();
+    }
+
     int positionX = 530;
     int positionY = 0;
     ui->widgetImage->setGeometry(positionX,positionY,scaledSize,scaledSize);
@@ -453,7 +462,7 @@ void MainWindow::LoadMask()
 
     if(exists(maskFilePath))
     {
-        Mask = imread(maskFilePath.string(), CV_LOAD_IMAGE_ANYDEPTH);
+        Mask = imread(maskFilePath.string(), cv::IMREAD_ANYDEPTH);
         if(Mask.type() != CV_16U)
         {
             ui->textEditOut->append("mask format improper");
@@ -680,7 +689,9 @@ void MainWindow::on_spinTilePositionY_valueChanged(int arg1)
 
 void MainWindow::on_spinBoxTileScale_valueChanged(int arg1)
 {
-
+    FillHolesInMask(TileMask);
+    CopyTileToRegion();
+    GetTile();
     ScaleTile();
 }
 
@@ -702,8 +713,18 @@ void MainWindow::on_widgetImage_on_mouseMove(QPoint point, int butPressed)
 {
     int radius = ui->spinBoxPenSize->value();
     int tileScale = ui->spinBoxTileScale->value();
-    int x = point.x() / tileScale;
-    int y = point.y() / tileScale;
+    int x;
+    int y;
+    if(ui->checkBoxMagnify->checkState())
+    {
+        x = point.x() / tileScale;
+        y = point.y() / tileScale;
+    }
+    else
+    {
+        x = point.x() * tileScale;
+        y = point.y() * tileScale;
+    }
     if(butPressed & 0x1)
     {
         switch(ui->comboBoxDrawingTool->currentIndex())
@@ -742,8 +763,18 @@ void MainWindow::on_widgetImage_on_mousePressed(QPoint point, int butPressed)
 {
     int radius = ui->spinBoxPenSize->value();
     int tileScale = ui->spinBoxTileScale->value();
-    int x = point.x() / tileScale;
-    int y = point.y() / tileScale;
+    int x;
+    int y;
+    if(ui->checkBoxMagnify->checkState())
+    {
+        x = point.x() / tileScale;
+        y = point.y() / tileScale;
+    }
+    else
+    {
+        x = point.x() * tileScale;
+        y = point.y() * tileScale;
+    }
     if(butPressed & 0x1)
     {
         prevPosX = x;
@@ -954,3 +985,9 @@ void MainWindow::on_spinBoxImPartition_valueChanged(int arg1)
 {
      ShowImages();
 }
+
+void MainWindow::on_checkBoxMagnify_stateChanged(int arg1)
+{
+    ScaleTile();
+}
+
