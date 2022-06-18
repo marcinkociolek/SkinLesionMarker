@@ -720,7 +720,7 @@
       <number>64</number>
      </property>
      <property name="maximum">
-      <number>2048</number>
+      <number>4096</number>
      </property>
      <property name="singleStep">
       <number>64</number>
