@@ -45,7 +45,7 @@ FORMS += \
         mainwindow.ui
 
 
-win32: INCLUDEPATH += C:\opencv452\include\
+win32: INCLUDEPATH += C:\opencv452cudaWorld\include\
 win32: INCLUDEPATH += C:\boost1_75\
 win32: INCLUDEPATH += C:\LibTiff\
 win32: INCLUDEPATH += ../../ProjectsLib\LibMarcin\
@@ -61,7 +61,7 @@ win32: INCLUDEPATH += ../../ProjectsLibForein/LibPMS/
 
 
 # this is for release
-win32: LIBS += -LC:/opencv452/x64/vc16/lib/
+win32: LIBS += -LC:\opencv452cudaWorld/x64/vc16/lib/
 win32: LIBS += -lopencv_world452
 
 win32: LIBS += -LC:/boost1_75/stage/x64/lib/
